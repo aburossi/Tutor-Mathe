@@ -122,38 +122,58 @@ if "messages" not in st.session_state:
     st.session_state.messages = []
 if "chat_history" not in st.session_state:
     st.session_state.chat_history = []
+if "user_input" not in st.session_state:
+    st.session_state.user_input = ""
 
 # --- 4. Display Chat History ---
 for msg in st.session_state.messages:
     st.markdown(f"**{msg['sender']}:** {msg['text']}")
 
 # --- 5. User Input and Response Handling ---
-with st.form(key='chat_form', clear_on_submit=True):
-    user_input = st.text_input("Wie kann ich dir heute in Mathematik helfen?", key="user_input_form")
+
+def send_message():
+    user_input = st.session_state.user_input.strip()
+    if user_input:
+        # Append user message to display
+        st.session_state.messages.append({"sender": "Du", "text": user_input})
+
+        # Append user message to chat history in the richtigen Format
+        st.session_state.chat_history.append({"role": "user", "parts": [user_input]})
+
+        try:
+            # Get response from the model
+            chat_session = model.start_chat(history=st.session_state.chat_history)
+            response = chat_session.send_message(user_input)
+
+            # Append model response to chat history in der richtigen Format
+            st.session_state.chat_history.append({"role": "model", "parts": [response.text]})
+
+            # Append model response to display
+            st.session_state.messages.append({"sender": "MatheTutorBot", "text": response.text})
+
+        except Exception as e:
+            st.error(f"Fehler: {e}")
+
+        # Clear user input
+        st.session_state.user_input = ""
+
+# Erstelle einen Platzhalter für das Eingabefeld
+input_placeholder = st.empty()
+
+with input_placeholder.form(key='input_form', clear_on_submit=True):
+    user_input = st.text_input(
+        "Wie kann ich dir heute in Mathematik helfen?",
+        key="user_input",
+        placeholder="Gib deine Frage hier ein...",
+    )
     submit_button = st.form_submit_button(label='Senden')
 
-if submit_button and user_input.strip():
-    # Append user message to display
-    st.session_state.messages.append({"sender": "Du", "text": user_input})
-
-    # Append user message to chat history in the richtigen Format
-    st.session_state.chat_history.append({"role": "user", "parts": [user_input]})
-
-    try:
-        # Get response from the model
-        chat_session = model.start_chat(history=st.session_state.chat_history)
-        response = chat_session.send_message(user_input)
-
-        # Append model response to chat history in the richtigen Format
-        st.session_state.chat_history.append({"role": "model", "parts": [response.text]})
-
-        # Append model response to display
-        st.session_state.messages.append({"sender": "MatheTutorBot", "text": response.text})
-
-    except Exception as e:
-        st.error(f"Fehler: {e}")
+    if submit_button and user_input.strip():
+        send_message()
 
 # --- 6. Reset Button ---
 if st.button("Chat löschen"):
     st.session_state.messages = []
     st.session_state.chat_history = []
+    st.session_state.user_input = ""
+    st.experimental_rerun()
