@@ -122,23 +122,21 @@ if "messages" not in st.session_state:
     st.session_state.messages = []
 if "chat_history" not in st.session_state:
     st.session_state.chat_history = []
-# Entferne die Initialisierung von "user_input"
-# if "user_input" not in st.session_state:
-#     st.session_state.user_input = ""
 
 # --- 4. Display Chat History ---
 for msg in st.session_state.messages:
     st.markdown(f"**{msg['sender']}:** {msg['text']}")
 
 # --- 5. User Input and Response Handling ---
-# Verwende einen eindeutigen Schlüssel für das Textfeld und setze den Wert nicht direkt aus session_state
-user_input = st.text_input("Wie kann ich dir heute in Mathematik helfen?", key="user_input")
+with st.form(key='chat_form', clear_on_submit=True):
+    user_input = st.text_input("Wie kann ich dir heute in Mathematik helfen?", key="user_input_form")
+    submit_button = st.form_submit_button(label='Senden')
 
-if st.button("Senden") and user_input.strip():
+if submit_button and user_input.strip():
     # Append user message to display
     st.session_state.messages.append({"sender": "Du", "text": user_input})
 
-    # Append user message to chat history in the correct format
+    # Append user message to chat history in the richtigen Format
     st.session_state.chat_history.append({"role": "user", "parts": [user_input]})
 
     try:
@@ -146,7 +144,7 @@ if st.button("Senden") and user_input.strip():
         chat_session = model.start_chat(history=st.session_state.chat_history)
         response = chat_session.send_message(user_input)
 
-        # Append model response to chat history in the correct format
+        # Append model response to chat history in the richtigen Format
         st.session_state.chat_history.append({"role": "model", "parts": [response.text]})
 
         # Append model response to display
@@ -155,15 +153,7 @@ if st.button("Senden") and user_input.strip():
     except Exception as e:
         st.error(f"Fehler: {e}")
 
-    # Clear user input by resetting the key
-    st.session_state.user_input = ""
-
-    # Option 1: Rerun ist nicht unbedingt nötig, da das Neuladen des Zustands das Textfeld leeren sollte
-    # st.rerun()
-
 # --- 6. Reset Button ---
 if st.button("Chat löschen"):
     st.session_state.messages = []
     st.session_state.chat_history = []
-    # Optionally, auch die Eingabe löschen
-    st.session_state.user_input = ""
