@@ -113,28 +113,30 @@ model = genai.GenerativeModel(
 )
 
 # --- 2. Streamlit App Setup ---
-st.set_page_config(page_title="Krankenversicherungbot", layout="centered")
-st.title("Krankenversicherungbot")
-st.write("Dieser Chatbot hilft Ihnen, den Unterschied zwischen Franchise und Selbstbehalt zu lernen.")
+st.set_page_config(page_title="MatheTutorBot", layout="centered")
+st.title("MatheTutorBot")
+st.write("Dieser Chatbot unterstützt dich beim Wiederholen und Festigen deiner Mathematikkenntnisse.")
 
 # --- 3. Session State Initialization ---
 if "messages" not in st.session_state:
     st.session_state.messages = []
 if "chat_history" not in st.session_state:
     st.session_state.chat_history = []
-if "user_input" not in st.session_state:
-    st.session_state.user_input = ""
+# Entferne die Initialisierung von "user_input"
+# if "user_input" not in st.session_state:
+#     st.session_state.user_input = ""
 
 # --- 4. Display Chat History ---
 for msg in st.session_state.messages:
     st.markdown(f"**{msg['sender']}:** {msg['text']}")
 
 # --- 5. User Input and Response Handling ---
-user_input = st.text_input("Lass uns die Kostenbeteiligung der Krankenkasse zusammen lernen. Was willst du besser verstehen", st.session_state.user_input)
+# Verwende einen eindeutigen Schlüssel für das Textfeld und setze den Wert nicht direkt aus session_state
+user_input = st.text_input("Wie kann ich dir heute in Mathematik helfen?", key="user_input")
 
-if st.button("Send") and user_input.strip():
+if st.button("Senden") and user_input.strip():
     # Append user message to display
-    st.session_state.messages.append({"sender": "You", "text": user_input})
+    st.session_state.messages.append({"sender": "Du", "text": user_input})
 
     # Append user message to chat history in the correct format
     st.session_state.chat_history.append({"role": "user", "parts": [user_input]})
@@ -148,20 +150,20 @@ if st.button("Send") and user_input.strip():
         st.session_state.chat_history.append({"role": "model", "parts": [response.text]})
 
         # Append model response to display
-        st.session_state.messages.append({"sender": "Chatbot", "text": response.text})
+        st.session_state.messages.append({"sender": "MatheTutorBot", "text": response.text})
 
     except Exception as e:
-        st.error(f"Error: {e}")
+        st.error(f"Fehler: {e}")
 
-    # Clear user input
+    # Clear user input by resetting the key
     st.session_state.user_input = ""
 
-    # Force a re-render to show the new message
-    st.rerun()
-
+    # Option 1: Rerun ist nicht unbedingt nötig, da das Neuladen des Zustands das Textfeld leeren sollte
+    # st.rerun()
 
 # --- 6. Reset Button ---
-if st.button("Clear Chat"):
+if st.button("Chat löschen"):
     st.session_state.messages = []
     st.session_state.chat_history = []
+    # Optionally, auch die Eingabe löschen
     st.session_state.user_input = ""
