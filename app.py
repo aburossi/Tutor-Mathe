@@ -108,10 +108,9 @@ Gib dem Schüler keine direkten Lösungen vor, sondern leite ihn dazu an, den L�
 """
 
 # --- 2. Model Initialization ---
-# UPDATE: Using the new model name and adjusted temperature
 try:
     model = genai.GenerativeModel(
-        model_name="learnlm-2.0-flash-experimental",
+        model_name="learnlm-2.0-flash-experimental", # This line is corrected
         generation_config={
             "temperature": 0.4,
             "top_p": 0.95,
@@ -127,14 +126,12 @@ except Exception as e:
 
 
 # --- 3. Session State and Chat Initialization ---
-
-# UPDATE: More robust session state management
 if "messages" not in st.session_state:
     st.session_state.messages = []
 if "chat_session" not in st.session_state:
     st.session_state.chat_session = model.start_chat(history=[])
 
-# Add a button to reset the chat
+# Add a button to reset the chat in the sidebar
 if st.sidebar.button("Neuen Chat starten"):
     st.session_state.messages = []
     st.session_state.chat_session = model.start_chat(history=[])
@@ -153,13 +150,11 @@ if len(st.session_state.messages) == 0:
 
 
 # --- 4. Display Chat History ---
-# UPDATE: Using st.chat_message for a better UI
 for message in st.session_state.messages:
     with st.chat_message(message["role"]):
         st.markdown(message["content"])
 
 # --- 5. User Input and Response Handling ---
-# UPDATE: Using st.chat_input for a modern and efficient input method
 if user_prompt := st.chat_input("Wie kann ich dir heute in Mathematik helfen?"):
     # Append and display user message
     st.session_state.messages.append({"role": "user", "content": user_prompt})
