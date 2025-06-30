@@ -2,14 +2,21 @@ import streamlit as st
 import google.generativeai as genai
 
 # --- 1. Configuration and Setup ---
-# Configure the Gemini API using Streamlit secrets
-api_key = st.secrets.get("GEMINI_API_KEY")
+st.set_page_config(page_title="MatheTutorBot", page_icon="🧮", layout="centered")
+st.title("🧮 MatheTutorBot")
+st.caption("Dein persönlicher Tutor zum Festigen deiner Mathematikkenntnisse.")
 
-if not api_key:
-    st.error("GEMINI_API_KEY not set in Streamlit secrets.")
+# Configure the Gemini API using Streamlit secrets
+try:
+    api_key = st.secrets["GEMINI_API_KEY"]
+    genai.configure(api_key=api_key)
+except KeyError:
+    st.error("GEMINI_API_KEY wurde nicht in den Streamlit-Geheimnissen gefunden.")
+    st.stop()
+except Exception as e:
+    st.error(f"Fehler bei der Konfiguration von Gemini: {e}")
     st.stop()
 
-genai.configure(api_key=api_key)
 
 # Define system instructions
 system_instructions = """
@@ -20,21 +27,21 @@ Du bist ein Tutor, der Lernende beim Wiederholen und Festigen der Mathematikkomp
 ### **Themenbereiche:**
 
 1. **Die Lehre der Zahlen**:
-   - Addition und Subtraktion
-   - Multiplikation und Division
-   - Ganze Zahlen, Brüche und Dezimalzahlen
+   - Addition und Subtraktion
+   - Multiplikation und Division
+   - Ganze Zahlen, Brüche und Dezimalzahlen
 
 2. **Proportionalität und Dreisatz**:
-   - Grundkonzepte der Proportionalität
-   - Lösung von Dreisatzaufgaben in Alltagssituationen
+   - Grundkonzepte der Proportionalität
+   - Lösung von Dreisatzaufgaben in Alltagssituationen
 
 3. **Prozentrechnen**:
-   - Prozentsätze berechnen (z. B. Rabatte, Zinsen)
-   - Prozentuale Zu- und Abnahme
+   - Prozentsätze berechnen (z. B. Rabatte, Zinsen)
+   - Prozentuale Zu- und Abnahme
 
 4. **Einheiten**:
-   - Umrechnen von Längen, Gewichten, Volumen und Zeit
-   - Anwendung von Maßeinheiten in praktischen Kontexten
+   - Umrechnen von Längen, Gewichten, Volumen und Zeit
+   - Anwendung von Maßeinheiten in praktischen Kontexten
 
 ---
 
@@ -84,96 +91,91 @@ Gib dem Schüler keine direkten Lösungen vor, sondern leite ihn dazu an, den L�
 ### **Session-Struktur**:
 
 1. **Bedürfnisse klären**:
-   - Stelle die Themenbereiche vor und ermittle, wo der Schüler sich verbessern möchte.
-   - Falls der Schüler unentschlossen ist, gib ihm eine kleine Aufgabe aus jedem Bereich zur Orientierung.
+   - Stelle die Themenbereiche vor und ermittle, wo der Schüler sich verbessern möchte.
+   - Falls der Schüler unentschlossen ist, gib ihm eine kleine Aufgabe aus jedem Bereich zur Orientierung.
 
 2. **Themenbearbeitung**:
-   - Wähle gemeinsam mit dem Schüler ein Thema aus.
-   - Beginne mit grundlegenden Aufgaben und steigere die Schwierigkeit.
-   - Erkläre wichtige Konzepte und fordere den Schüler auf, sie in eigenen Worten zu beschreiben.
+   - Wähle gemeinsam mit dem Schüler ein Thema aus.
+   - Beginne mit grundlegenden Aufgaben und steigere die Schwierigkeit.
+   - Erkläre wichtige Konzepte und fordere den Schüler auf, sie in eigenen Worten zu beschreiben.
 
 3. **Zusammenfassung und Reflexion**:
-   - Besprich am Ende der Session, was der Schüler gelernt hat.
-   - Gib ihm eine Rückmeldung zu seinen Stärken und Bereichen, in denen er noch üben sollte.
+   - Besprich am Ende der Session, was der Schüler gelernt hat.
+   - Gib ihm eine Rückmeldung zu seinen Stärken und Bereichen, in denen er noch üben sollte.
 
 4. **Hausaufgaben (optional)**:
-   - Falls gewünscht, gib dem Schüler Aufgaben mit, um das Gelernte zu vertiefen.
+   - Falls gewünscht, gib dem Schüler Aufgaben mit, um das Gelernte zu vertiefen.
 """
-# Initialize the Generative Model
-model = genai.GenerativeModel(
-    model_name="learnlm-1.5-pro-experimental",
-    generation_config={
-        "temperature": 0.3,
-        "top_p": 0.95,
-        "top_k": 64,
-        "max_output_tokens": 8192,
-        "response_mime_type": "text/plain",
-    },
-    system_instruction=system_instructions,
-)
 
-# --- 2. Streamlit App Setup ---
-st.set_page_config(page_title="MatheTutorBot", layout="centered")
-st.title("MatheTutorBot")
-st.write("Dieser Chatbot unterstützt dich beim Wiederholen und Festigen deiner Mathematikkenntnisse.")
+# --- 2. Model Initialization ---
+# UPDATE: Using the new model name and adjusted temperature
+try:
+    model = genai.GenerativeModel(
+        model_name="learnlm-2.0-flash-experimental",
+        generation_config={
+            "temperature": 0.4,
+            "top_p": 0.95,
+            "top_k": 64,
+            "max_output_tokens": 8192,
+            "response_mime_type": "text/plain",
+        },
+        system_instruction=system_instructions,
+    )
+except Exception as e:
+    st.error(f"Fehler bei der Initialisierung des Modells: {e}")
+    st.stop()
 
-# --- 3. Session State Initialization ---
+
+# --- 3. Session State and Chat Initialization ---
+
+# UPDATE: More robust session state management
 if "messages" not in st.session_state:
     st.session_state.messages = []
-if "chat_history" not in st.session_state:
-    st.session_state.chat_history = []
-if "user_input" not in st.session_state:
-    st.session_state.user_input = ""
+if "chat_session" not in st.session_state:
+    st.session_state.chat_session = model.start_chat(history=[])
+
+# Add a button to reset the chat
+if st.sidebar.button("Neuen Chat starten"):
+    st.session_state.messages = []
+    st.session_state.chat_session = model.start_chat(history=[])
+    st.rerun()
+
+# Initial greeting from the assistant if the chat is new
+if len(st.session_state.messages) == 0:
+    try:
+        initial_prompt = "Stell dich bitte vor und frage mich, woran ich heute arbeiten möchte."
+        with st.spinner("MatheTutorBot startet..."):
+            initial_response = st.session_state.chat_session.send_message(initial_prompt)
+            st.session_state.messages.append({"role": "assistant", "content": initial_response.text})
+    except Exception as e:
+        st.error(f"Fehler beim Starten des Chats: {e}")
+        st.stop()
+
 
 # --- 4. Display Chat History ---
-for msg in st.session_state.messages:
-    st.markdown(f"**{msg['sender']}:** {msg['text']}")
+# UPDATE: Using st.chat_message for a better UI
+for message in st.session_state.messages:
+    with st.chat_message(message["role"]):
+        st.markdown(message["content"])
 
 # --- 5. User Input and Response Handling ---
+# UPDATE: Using st.chat_input for a modern and efficient input method
+if user_prompt := st.chat_input("Wie kann ich dir heute in Mathematik helfen?"):
+    # Append and display user message
+    st.session_state.messages.append({"role": "user", "content": user_prompt})
+    with st.chat_message("user"):
+        st.markdown(user_prompt)
 
-def send_message():
-    user_input = st.session_state.user_input.strip()
-    if user_input:
-        # Append user message to display
-        st.session_state.messages.append({"sender": "Du", "text": user_input})
+    # Get and display assistant response
+    try:
+        with st.chat_message("assistant"):
+            with st.spinner("Denke nach..."):
+                response = st.session_state.chat_session.send_message(user_prompt)
+                assistant_response = response.text
+                st.markdown(assistant_response)
 
-        # Append user message to chat history in the richtigen Format
-        st.session_state.chat_history.append({"role": "user", "parts": [user_input]})
+        # Add assistant response to session state
+        st.session_state.messages.append({"role": "assistant", "content": assistant_response})
 
-        try:
-            # Get response from the model
-            chat_session = model.start_chat(history=st.session_state.chat_history)
-            response = chat_session.send_message(user_input)
-
-            # Append model response to chat history in der richtigen Format
-            st.session_state.chat_history.append({"role": "model", "parts": [response.text]})
-
-            # Append model response to display
-            st.session_state.messages.append({"sender": "MatheTutorBot", "text": response.text})
-
-        except Exception as e:
-            st.error(f"Fehler: {e}")
-
-        # Clear user input
-        st.session_state.user_input = ""
-
-# Erstelle einen Platzhalter für das Eingabefeld
-input_placeholder = st.empty()
-
-with input_placeholder.form(key='input_form', clear_on_submit=True):
-    user_input = st.text_input(
-        "Wie kann ich dir heute in Mathematik helfen?",
-        key="user_input",
-        placeholder="Gib deine Frage hier ein...",
-    )
-    submit_button = st.form_submit_button(label='Senden')
-
-    if submit_button and user_input.strip():
-        send_message()
-
-# --- 6. Reset Button ---
-if st.button("Chat löschen"):
-    st.session_state.messages = []
-    st.session_state.chat_history = []
-    st.session_state.user_input = ""
-    st.experimental_rerun()
+    except Exception as e:
+        st.error(f"Ein Fehler ist aufgetreten: {e}")
