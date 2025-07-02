@@ -112,7 +112,7 @@ try:
     model = genai.GenerativeModel(
         model_name="learnlm-2.0-flash-experimental", # This line is corrected
         generation_config={
-            "temperature": 0.4,
+            "temperature": 0.8,
             "top_p": 0.95,
             "top_k": 64,
             "max_output_tokens": 8192,
