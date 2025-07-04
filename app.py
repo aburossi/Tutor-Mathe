@@ -105,6 +105,9 @@ Gib dem Schüler keine direkten Lösungen vor, sondern leite ihn dazu an, den L�
 
 4. **Hausaufgaben (optional)**:
    - Falls gewünscht, gib dem Schüler Aufgaben mit, um das Gelernte zu vertiefen.
+
+//WICHTIG
+Halte deine erklärungen kurz, damit der Schüler nicht zu viel lesen soll.
 """
 
 # --- 2. Model Initialization ---
